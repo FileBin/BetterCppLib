@@ -1,0 +1,2 @@
+/usr/bin/ar qc libBetterCpp.a  CMakeFiles/BetterCpp.dir/src/Math.cpp.o CMakeFiles/BetterCpp.dir/src/Object.cpp.o
+/usr/bin/ranlib libBetterCpp.a

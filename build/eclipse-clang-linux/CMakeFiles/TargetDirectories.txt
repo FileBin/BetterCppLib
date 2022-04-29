@@ -1,0 +1,4 @@
+/home/filebin/GitRepo/BetterCpp/build/eclipse-clang-linux/CMakeFiles/rebuild_cache.dir
+/home/filebin/GitRepo/BetterCpp/build/eclipse-clang-linux/CMakeFiles/edit_cache.dir
+/home/filebin/GitRepo/BetterCpp/build/eclipse-clang-linux/CMakeFiles/Resources.dir
+/home/filebin/GitRepo/BetterCpp/build/eclipse-clang-linux/CMakeFiles/BetterCpp.dir
