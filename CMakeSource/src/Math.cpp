@@ -10,11 +10,11 @@
 NSP_BETTERCPP_BEGIN
 
 ulong Math::hash(ulong x) {
-    x += (x << 10);
-    x ^= (x >> 6);
-    x += (x << 3);
-    x ^= (x >> 11);
-    x += (x << 15);
+    x += (x << 20);
+    x ^= (x >> 12);
+    x += (x << 6);
+    x ^= (x >> 22);
+    x += (x << 30);
     return x;
 }
 

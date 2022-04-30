@@ -9,7 +9,8 @@
 
 #include "stdafx.hpp"
 
-#include "Objects/String.hpp"
+#include "Interfaces/Interfaces.hpp"
+#include "Objects/Objects.hpp"
 #include "Core.hpp"
 #include "Math/Math.hpp"
 

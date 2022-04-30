@@ -4,10 +4,8 @@
  *  Created on: Apr 29, 2022
  *      Author: filebin
  */
-
-#include "stdafx.hpp"
-
 #pragma once
+#include "stdafx.hpp"
 
 typedef char* char_ptr;
 typedef char const* char_cptr;
@@ -26,15 +24,29 @@ better_class_proto(String);
 
 struct Interface {};
 
+typedef Interface RootType;
 
-
-class Object {
+class Object : public Interface {
 public:
+	virtual String getFullName() const;
 	virtual String toString() const;
 	virtual ulong hash() const;
 	virtual uint byteSize() const = 0;
 	virtual ~Object() {}
 };
 
+NSP_BETTERCPP_END
+
+#include "Objects/Pointers.hpp"
+
+NSP_BETTERCPP_BEGIN
+
+typedef RefPtr<RootType> pRootType;
 
 NSP_BETTERCPP_END
+
+#include "Interfaces/Interfaces.hpp"
+#include "Objects/Objects.hpp"
+
+#include "Functions.hpp"
+
