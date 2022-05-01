@@ -22,6 +22,7 @@ private:
 protected:
 	T& get_elem(uint i){ return data[i]; }
 public:
+	~List() { delete data; }
 	List() {}
 
 	List(const_ref(List<T>) other) {
@@ -96,7 +97,7 @@ public:
 	uint count() const override { return size; }
 	uint length() const { return size; }
 
-	ICollectionT<T>& push(const_ref(T) elem) override {
+	ICollectionT<T>& push(T elem) override {
 		//expand
 		if(reserved <= size) reserve(size + allocation_step);
 

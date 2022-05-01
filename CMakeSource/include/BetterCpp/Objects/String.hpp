@@ -17,6 +17,7 @@ private:
 wchar_t* data;
 
 public:
+	~String();
 	String();
 	String(const_ref(String) other);
 	String(const char_cptr utf8_str);

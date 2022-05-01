@@ -13,6 +13,8 @@
 
 NSP_BETTERCPP_BEGIN
 
+String::~String() { delete data; }
+
 String::String() { data = new wchar_t[1]; data[0] = 0; }
 
 String::String(const_ref(String) other) {

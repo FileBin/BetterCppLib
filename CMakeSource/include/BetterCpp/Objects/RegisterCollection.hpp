@@ -13,7 +13,7 @@
 
 NSP_BETTERCPP_BEGIN
 
-template<typename ElemT, typename Id_t = size_t>
+template<typename ElemT, typename Id_t = uint>
 class RegisterCollection {
 public:
 	typedef AutoPtr<ElemT> ptr_t;

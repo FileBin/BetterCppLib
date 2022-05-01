@@ -75,7 +75,7 @@ better_interface(ICollectionT) better_implements(public IEnumerableT<T>, public 
 	virtual bool empty() const = 0;
 	virtual uint count() const = 0;
 
-	virtual ICollectionT<T>& push(const_ref(T) elem) = 0;
+	virtual ICollectionT<T>& push(T elem) = 0;
 	virtual T pop() = 0;
 	virtual void clear() = 0;
 
