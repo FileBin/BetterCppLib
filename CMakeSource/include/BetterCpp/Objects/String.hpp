@@ -8,15 +8,11 @@
 #pragma once
 
 #include "../stdafx.hpp"
-#include "../Core.hpp"
 
 NSP_BETTERCPP_BEGIN
 
-better_class(String) better_implements(public std::wstring) {
-BETTER_OVERRIDE_GET_FULL_NAME
-BETTER_OVERRIDE_BYTE_SIZE
-
-String toString() { return *this; }
+better_class(String) {
+private:
 
 wchar_t* data;
 
@@ -47,11 +43,16 @@ public:
 	std::string toUtf8() const;
 	const wchar_cptr toWide() const;
 
-	static String toString(const_ref(Object) object);
 
 	template<typename T>
 	static String toString(T val) {
-		return "unknown";
+		if(is_base<IEnumerableT<T>, T>::value)
+			return IEnumerableT<T>::toString(as<IEnumerableT<T>>(val));
+
+		if(is_base<IEnumerable, T>::value)
+			return IEnumerable::toString(as<IEnumerable>(val));
+
+		return typeid(T).name();
 	}
 
 	wchar_t& operator[](uint pos);
@@ -91,6 +92,8 @@ public:
 		//return fmt::vformat(fmt::to_string_view(std::wstring(s.toWide())), fmt::make_format_args<fmt::buffer_context<wchar_t>>(convert<_Types>::value(args)...));
 	}
 
+	template<> String toString<const_ref(Object)>(const_ref(Object) val) { return val.type().info.name(); }
+
 	template<> String toString<const char*>(const char* val) { return val; }
 	template<> String toString<const wchar_t*>(const wchar_t* val) { return val; }
 
@@ -115,6 +118,24 @@ public:
 	template<> String toString<unsigned long>(unsigned long val) { return std::to_wstring(val).c_str(); }
 	template<> String toString<unsigned long long>(unsigned long long val) { return std::to_wstring(val).c_str(); }
 };
+
+template<typename T>
+String IEnumerableT<T>::toString(const_ref(IEnumerableT<T>) collection) {
+	auto en = collection.getEnumeratorT();
+	bool empty = true;
+	String str = "{ ";
+	while(en->next()) {
+		if(!empty)
+			str += ", ";
+		const T& o = en->current();
+		str += String::toString<T>(o);
+		empty = false;
+	}
+	if(empty)
+		return "{ empty }";
+	str += " }";
+	return str;
+}
 
 template<typename T>
 String operator+(String s, T o) {

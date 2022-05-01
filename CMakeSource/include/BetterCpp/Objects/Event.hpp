@@ -46,12 +46,14 @@ public:
 	void invoke(args_t... args) {
 		const_ref(auto) coll = as<IEnumerableT<AutoPtr<std_func_t>>>(handlers.getCollectionWithGaps());
 
-		auto en = coll.getEnumeratorT();
-		do {
-			auto& func = en->currentT();
+		//auto en = coll.getEnumeratorT();
+		//while(en->next()) {
+		foreach(coll) {
+			auto& func = foreach_elem;//en->currentT();
 			if(func.isNull()) return;
 			(*func.get())(args...);
-		} while(en->next());
+		}
+		//}
 	}
 };
 

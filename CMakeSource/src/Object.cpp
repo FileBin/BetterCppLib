@@ -9,17 +9,28 @@
 
 NSP_BETTERCPP_BEGIN
 
-String Object::getFullName() const {
-	return "Object";
+AutoPtr<Object> Object::clone() const {
+	return cloneNewUnsafe();
+	//return new Object();
 }
 
-String Object::toString() const {
-	return "Object";
+RefPtr<Object> Object::cloneNew() const {
+	return cloneNewUnsafe();
+	//return new Object();
 }
 
-ulong Object::hash() const {
-	uint n = byteSize();
-	ulong* data_chunk = (ulong*)this;
+Object* Object::cloneNewUnsafe() const {
+	THROW_EXCEPTION((String(type().info.name()) + " is abstract class").toUtf8().c_str());
+	//return new Object();
+}
+
+const Type Object::type() const {
+	return Type(typeid(*this), sizeof(*this));
+}
+
+ulong Object::hash(const_ref(Object) obj) {
+	uint n = obj.type().size;
+	ulong* data_chunk = (ulong*)&obj;
 	ulong res = 0;
 	for (uint i = 0; i < n; i+=sizeof(ulong))
 		res ^= Math::hash(*(data_chunk++));

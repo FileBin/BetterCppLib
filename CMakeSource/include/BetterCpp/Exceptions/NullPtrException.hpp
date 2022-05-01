@@ -7,16 +7,17 @@
 NSP_BETTERCPP_BEGIN
 
 better_class_extends(NullPtrException, Exception) {
-	BETTER_OVERRIDE_EXCEPTION_METHODS
 private:
 	std::type_index type;
 	void* ptr;
+
+	void __setInfo();
+
 public:
 	template<typename ptrT = void*>
 	NullPtrException(ptrT whatPtr, int line_, const char* file_) : Exception("Pointer is null", line_, file_), type(typeid(whatPtr)) {
 		ptr = (void*)whatPtr;
-		String info = String::format(L"TypeInfo: {}\nPointer: {:#x}\n", String(getTypeInfo().name()), (ulong)getPointer());//fmt::format(L"TypeInfo: {}\nPointer: {:#x}\n", String(getTypeInfo().name()), (ulong)getPointer()); // @suppress("Invalid arguments")
-		setInfo(info);
+		__setInfo();
 	}
 
 	std::type_index getTypeInfo() { return type; }

@@ -6,16 +6,9 @@
 
 NSP_BETTERCPP_BEGIN
 
-better_class_extends(FileNotFoundException,Exception) {
-	BETTER_OVERRIDE_OBJECT_METHODS;
+class FileNotFoundException : public Exception {
 public:
-	FileNotFoundException(String file_name, int line_, const char* file_) : Exception("File not found!", line_, file_) {
-		String info{};
-		info.append("File Name: ");
-		info.append(file_name);
-		info.append("\n");
-		setInfo(info);
-	}
+	FileNotFoundException(String file_name, int line_, const char* file_);
 };
 
 NSP_BETTERCPP_END

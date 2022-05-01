@@ -29,11 +29,45 @@ template<typename T>
 better_interface(IEnumerableT) {
 	virtual AutoPtr<IEnumeratorT<T>> getEnumeratorT() const = 0;
 	virtual ~IEnumerableT() {}
+
+	static String toString(const_ref(IEnumerableT<T>) collection);/* {
+		auto en = collection.getEnumeratorT();
+		bool empty = true;
+		String str = "{ ";
+		while(en->next()) {
+			if(!empty)
+				str += ", ";
+			const T& o = en->current();
+			str += String::toString<T>(o);
+			empty = false;
+		}
+		if(empty)
+			return "{ empty }";
+		str += " }";
+		return str;
+	}*/
 };
 
 better_interface(IEnumerable) {
 	virtual AutoPtr<IEnumerator> getEnumerator() const = 0;
 	virtual ~IEnumerable() {}
+
+	static String toString(const_ref(IEnumerable) collection);/* {
+		auto en = collection.getEnumerator();
+		bool empty = true;
+		String str = "{ ";
+		while(en->next()) {
+			if(!empty)
+				str += ", ";
+			const auto& o = en->current();
+			str += String::toString(o);
+			empty = false;
+		}
+		if(empty)
+			return "{ empty }";
+		str += " }";
+		return str;
+	}*/
 };
 
 template<typename T>

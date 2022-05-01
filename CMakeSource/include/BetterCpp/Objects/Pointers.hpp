@@ -5,8 +5,10 @@
  *      Author: filebin
  */
 
-#pragma once
 #include "../stdafx.hpp"
+
+#ifndef INCLUDE_BETTERCPP_OBJECTS_POINTERS_HPP_
+#define INCLUDE_BETTERCPP_OBJECTS_POINTERS_HPP_
 
 #include "../Exceptions.hpp"
 
@@ -109,7 +111,8 @@ template<typename T>
 class AutoPtr : public RefPtr<T> {
 public:
 	AutoPtr(const RefPtr<T>& other) : RefPtr<T>(other) {}
-	AutoPtr(const AutoPtr<T>& other) : RefPtr<T>(new T(**other.pptr)) {}
+	//TODO make check for base of object
+	AutoPtr(const AutoPtr<T>& other) : RefPtr<T>(object_cloner<T>::cloneNew(**other.pptr)) {}
 
 	template<typename... Args>
 	AutoPtr(std::nullptr_t) : RefPtr<T>(nullptr) {}
@@ -117,7 +120,12 @@ public:
 	template<typename... Args>
 	AutoPtr(Args... args) : RefPtr<T>(new T(args...)) {}
 
+	template<typename R>
+	AutoPtr(R* ptr) : RefPtr<T>(ptr) {}
+
 	AutoPtr(T* obj) : RefPtr<T>(obj) {}
+
+	T* cloneNew() const { return new T(**this->pptr); }
 
 	~AutoPtr() { this->release(); }
 
@@ -135,3 +143,7 @@ public:
 };
 
 NSP_BETTERCPP_END
+
+#include "../Core.hpp"
+
+#endif /*INCLUDE_BETTERCPP_OBJECTS_POINTERS_HPP_*/

@@ -12,20 +12,8 @@
 NSP_BETTERCPP_BEGIN
 
 template<typename T>
-better_class(List) better_implements(public IListT<T>) {
-	BETTER_OVERRIDE_BYTE_SIZE
-	BETTER_OVERRIDE_GET_FULL_NAME
+better_template_class(List, T) better_implements(public IListT<T>) {
 public:
-	String toString() const override {
-		if(empty())
-			return "{ empty }";
-		String str = "{ " + data[0];
-		for(uint i=1; i<size; i++) {
-			str += ", " + String::toString(data[i]);
-		}
-		str += " }";
-		return str;
-	}
 private:
 	constexpr static uint allocation_step = 4;
 	uint reserved = 0;
@@ -173,31 +161,32 @@ public:
 
 private:
 	better_class(Enumerator) better_implements(public IEnumeratorT<T>) {
-		BETTER_OVERRIDE_OBJECT_METHODS
 	public:
 		T* cur, *begin, *end;
 
-		Enumerator(T* begin, T* end) : cur(begin), begin(begin), end(end) {}
+		Enumerator(T* begin, T* end) : cur(begin-1), begin(begin), end(end) {}
 
-		const_ref(T) currentT() const override{
+		const_ref(T) currentT() const override {
+			if(cur < begin || cur >= end) THROW_INDEX_OUT_OF_RANGE_EXCEPTION;
 			return *cur;
 		}
 
 		const_ref(Object) current() const override {
+			if(cur < begin || cur >= end) THROW_INDEX_OUT_OF_RANGE_EXCEPTION;
 			return *(Object*)cur;
 		}
 
 		bool next() override {
 			if(++cur != end)
 				return true;
-			--cur;
 			return false;
 		}
 
 		void reset() override {
-			cur = begin;
+			cur = begin - 1;
 		}
 	};
 };
 
+template<> String String::toString<const_ref(IEnumerable)>(const_ref(IEnumerable) val);
 NSP_BETTERCPP_END

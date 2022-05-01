@@ -83,8 +83,6 @@ const wchar_cptr String::toWide() const {
 
 wchar_t& String::operator[](uint pos) { return data[pos]; }
 
-String String::toString(const_ref(Object) object) { return object.toString(); }
-
 NSP_BETTERCPP_END
 
 

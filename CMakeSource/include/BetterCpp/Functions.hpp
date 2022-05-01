@@ -11,15 +11,6 @@
 
 NSP_BETTERCPP_BEGIN
 
-template <typename Base, typename Derived>
-struct is_base {
-private:
-    constexpr static bool check(Base*)   { return true; }
-    constexpr static bool check(...)     { return false; }
-public:
-    enum { value = check(static_cast<Derived*>(0)) };
-};
-
 template<typename T, int size>
 uint ArraySize(T(&)[size]){ return size; }
 
@@ -51,13 +42,13 @@ void for_each(const_ref(IEnumerable) coll, std::function<void(const_ref(Object))
 template<typename... Args>
 void for_each(const_ref(IEnumerable) coll, std::function<void(const_ref(Object), Args&&...)> func, Args&&... args){
 	RefPtr<IEnumerator> en = coll.getEnumerator();
-	do { func(en->current(), args...); } while(en->next());
+	while(en->next()) func(en->current(), args...);
 }
 
 template<typename T>
 void for_each(const_ref(IEnumerableT<T>) coll, std::function<void(const_ref(T))> func){
 	AutoPtr<IEnumeratorT<T>> en = coll.getEnumeratorT();
-	do { func(en->currentT()); } while(en->next());
+	while(en->next()) func(en->currentT());
 }
 
 
@@ -68,6 +59,9 @@ void for_each(const_ref(IEnumerableT<T>) coll, std::function<void(const_ref(T), 
 	AutoPtr<IEnumeratorT<T>> en = coll.getEnumeratorT();
 	while(en->next()) func(en->getCurrentT(), args...);
 }
+
+
+
 
 NSP_BETTERCPP_END
 
