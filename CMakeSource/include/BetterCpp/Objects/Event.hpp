@@ -76,7 +76,7 @@ public:
 	}
 
 	void invoke(args_t... args) {
-		const_ref(auto) coll = as<IEnumerableT<AutoPtr<std_func_t>>>(handlers.getCollectionWithGaps());
+		const_ref(auto) coll = as<IEnumerableT<RefPtr<std_func_t>>>(handlers.getCollectionWithGaps());
 
 		//auto en = coll.getEnumeratorT();
 		//while(en->next()) {

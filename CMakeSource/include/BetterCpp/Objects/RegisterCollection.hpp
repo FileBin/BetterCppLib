@@ -16,7 +16,7 @@ NSP_BETTERCPP_BEGIN
 template<typename ElemT, typename Id_t = uint>
 class RegisterCollection {
 public:
-	typedef AutoPtr<ElemT> ptr_t;
+	typedef RefPtr<ElemT> ptr_t;
 private:
 	List<ptr_t> collection{};
 	List<Id_t> emptyPositions{};

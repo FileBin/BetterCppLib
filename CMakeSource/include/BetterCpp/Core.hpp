@@ -44,11 +44,13 @@ protected:
 	Object() = default;
 public:
 
-	AutoPtr<Object> clone() const;
-	RefPtr<Object> cloneNew() const;
+	RefPtr<Object> clone() const;
 	virtual Object* cloneNewUnsafe() const = 0;
 	virtual const Type type() const = 0;
 	virtual ~Object() {}
+
+	template<typename T>
+	RefPtr<T> cloneT(RefPtr<T> obj);
 
 	static ulong hash(const_ref(Object) obj);
 };
@@ -80,6 +82,9 @@ public:
 		return Type(typeid(*this), sizeof(*this));
 	}
 };
+
+template<typename T>
+RefPtr<T> Object::cloneT(RefPtr<T> obj){ object_cloner<T>::cloneNew(*obj); }
 
 NSP_BETTERCPP_END
 #endif /* INCLUDE_BETTERCPP_OBJECTS_CORE_OBJ_CRTP_HPP_ */

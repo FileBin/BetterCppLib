@@ -9,12 +9,7 @@
 
 NSP_BETTERCPP_BEGIN
 
-AutoPtr<Object> Object::clone() const {
-	return cloneNewUnsafe();
-	//return new Object();
-}
-
-RefPtr<Object> Object::cloneNew() const {
+RefPtr<Object> Object::clone() const {
 	return cloneNewUnsafe();
 	//return new Object();
 }

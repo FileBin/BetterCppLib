@@ -27,7 +27,7 @@ better_interface(IEnumeratorT) better_implements(IEnumerator) {
 
 template<typename T>
 better_interface(IEnumerableT) {
-	virtual AutoPtr<IEnumeratorT<T>> getEnumeratorT() const = 0;
+	virtual RefPtr<IEnumeratorT<T>> getEnumeratorT() const = 0;
 	virtual ~IEnumerableT() {}
 
 	static String toString(const_ref(IEnumerableT<T>) collection);/* {
@@ -49,7 +49,7 @@ better_interface(IEnumerableT) {
 };
 
 better_interface(IEnumerable) {
-	virtual AutoPtr<IEnumerator> getEnumerator() const = 0;
+	virtual RefPtr<IEnumerator> getEnumerator() const = 0;
 	virtual ~IEnumerable() {}
 
 	static String toString(const_ref(IEnumerable) collection);/* {

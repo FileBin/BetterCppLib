@@ -153,10 +153,10 @@ public:
 		return data[pos];
 	}
 
-	AutoPtr<IEnumerator> getEnumerator() const override {
+	RefPtr<IEnumerator> getEnumerator() const override {
 		return as<IEnumerator, Enumerator>(new Enumerator(data, data + size));
 	}
-	AutoPtr<IEnumeratorT<T>> getEnumeratorT() const override {
+	RefPtr<IEnumeratorT<T>> getEnumeratorT() const override {
 		return as<IEnumeratorT<T>, Enumerator>(new Enumerator(data, data + size));
 	}
 

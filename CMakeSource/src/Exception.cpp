@@ -83,7 +83,8 @@ FileNotFoundException::FileNotFoundException(String file_name, int line, const c
 }
 
 void NullPtrException::__setInfo() {
-	String info = String::format(L"TypeInfo: {}\nPointer: {:#x}\n", String(getTypeInfo().name()), (ulong)getPointer());//fmt::format(L"TypeInfo: {}\nPointer: {:#x}\n", String(getTypeInfo().name()), (ulong)getPointer()); // @suppress("Invalid arguments")
+	//String info = String::format(L"TypeInfo: {}\nPointer: {:#x}\n", String(getTypeInfo().name()), (ulong)getPointer());//fmt::format(L"TypeInfo: {}\nPointer: {:#x}\n", String(getTypeInfo().name()), (ulong)getPointer()); // @suppress("Invalid arguments")
+	String info = String::format(L"TypeInfo: {}\nPointer: {}\n", String(getTypeInfo().name()), (ulong)getPointer());//fmt::format(L"TypeInfo: {}\nPointer: {:#x}\n", String(getTypeInfo().name()), (ulong)getPointer()); // @suppress("Invalid arguments")
 	setInfo(info);
 }
 
