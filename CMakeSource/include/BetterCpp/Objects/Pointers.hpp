@@ -10,167 +10,9 @@
 #ifndef INCLUDE_BETTERCPP_OBJECTS_POINTERS_HPP_
 #define INCLUDE_BETTERCPP_OBJECTS_POINTERS_HPP_
 
-#include "../Exceptions.hpp"
+#include "BasePtr.hpp"
 
 NSP_BETTERCPP_BEGIN
-
-
-template<typename T>
-class AutoPtr;
-
-template<typename T>
-class RefPtr;
-
-template<typename T>
-class BasePtrFunctional {
-protected:
-	friend class AutoPtr<T>;
-	friend class RefPtr<T>;
-	struct ptr_data {
-		T* ptr;
-		uint ref_count;
-		bool has_owner;
-
-		ptr_data(T* obj, bool is_owner) {
-			has_owner = is_owner;
-			ref_count = 1;
-			ptr = obj;
-		}
-
-		void incr() {
-			++ref_count;
-		}
-
-		void decr() {
-			--ref_count;
-			if(ref_count == 0) {
-				delete this;
-				return;
-			}
-		}
-
-		void destroyObj() {
-			delete ptr;
-			ptr = nullptr;
-		}
-	} *data;
-
-	BasePtrFunctional(ptr_data* data) : data(data) {}
-
-public:
-	bool isNull() const {
-		if (data) return data->ptr == nullptr;
-		return true;
-	}
-
-	bool isNotNull() const {
-		if (data) return data->ptr != nullptr;
-		return false;
-	}
-
-	void release() {
-		if (isNotNull()) {
-			data->destroyObj();
-		}
-	}
-
-	T* get() const {
-		if(data) return data->ptr;
-		THROW_NULL_PTR_EXCEPTION(data);
-	}
-
-	T** getAddress() const {
-		return data;
-	}
-
-	T* operator->() const {
-		if(data) return data->ptr;
-		THROW_NULL_PTR_EXCEPTION(data);
-	}
-
-	T& operator*() {
-		if(data) return *data->ptr;
-		THROW_NULL_PTR_EXCEPTION(data);
-	}
-
-	const T& operator*() const {
-		if(data) return *data->ptr;
-		THROW_NULL_PTR_EXCEPTION(data);
-	}
-};
-
-template<typename T, bool is_owner>
-class BasePtr;
-
-template<typename T>
-class BasePtr<T, true> : public BasePtrFunctional<T> {
-protected:
-	typedef typename BasePtrFunctional<T>::ptr_data ptr_data;
-
-	BasePtr() : BasePtrFunctional<T>(nullptr) {}
-
-	void create(T* obj)  {
-		this->data = new ptr_data(obj, true);
-	}
-
-	BasePtr(ptr_data* other) : BasePtrFunctional<T>(other) {
-		if(other->has_owner) THROW_EXCEPTION("One pointer cluster can't have two or more owners!");
-		this->data->incr();
-	}
-
-	~BasePtr() {
-		disconnect();
-	}
-
-	void move(ptr_data* other) {
-		if(this->data == other) return;
-		disconnect();
-		if(other) {
-			if(other->has_owner) THROW_EXCEPTION("One pointer cluster can't have two or more owners!");
-			this->data = other;
-			other->incr();
-			other->has_owner = true;
-		} else this->data = nullptr;
-	}
-
-	void disconnect() {
-		if(this->data) {
-			this->data->decr();
-			this->data->has_owner = false;
-		}
-	}
-};
-
-template<typename T>
-class BasePtr<T, false> : public BasePtrFunctional<T> {
-protected:
-	typedef typename BasePtrFunctional<T>::ptr_data ptr_data;
-
-	BasePtr() : BasePtrFunctional<T>(nullptr) {}
-
-	void create(T* obj)  {
-		this->data = new ptr_data(obj, false);
-	}
-
-	BasePtr(ptr_data* other) : BasePtrFunctional<T>(other) {
-		this->data->incr();
-	}
-
-	~BasePtr() {
-		disconnect();
-	}
-
-	void move(ptr_data* other) {
-		if(this->data == other) return;
-		disconnect();
-		this->data = other;
-		if(other) other->incr();
-	}
-
-	void disconnect() {
-		if(this->data) this->data->decr();
-	}
-};
 
 template<typename T>
 class RefPtr : public BasePtr<T, false> {
@@ -180,12 +22,25 @@ public:
 
 	RefPtr(const AutoPtr<T>& other);
 
-	RefPtr(T* obj = nullptr) : BasePtr<T, false>() {
+	explicit RefPtr(T* obj = nullptr) : BasePtr<T, false>() {
 		if(obj) this->create(obj);
 	}
 
+	RefPtr(std::nullptr_t) : BasePtr<T, false>() {}
+
 	const RefPtr<T>& operator=(const RefPtr<T>& other) {
 		this->move(other.data);
+		return *this;
+	}
+
+	const RefPtr<T>& operator=(T* other) {
+		static_assert(is_base<EnableThisRefPtr<T>, T>::value, "Object must has this of type RefPtr<T> for this operator=");
+		this->move(other);
+		return *this;
+	}
+
+	const RefPtr<T>& operator=(std::nullptr_t) {
+		this->disconnect();
 		return *this;
 	}
 };
@@ -208,7 +63,7 @@ bool operator==(std::nullptr_t b, const BasePtrFunctional<T>& a) {
 template<typename T>
 class AutoPtr : public BasePtr<T, true> {
 private:
-	typedef typename BasePtrFunctional<T>::ptr_data ptr_data;
+	typedef ptr_cluster_hub<T> ptr_data;
 friend class RefPtr<T>;
 	static T* __cloneNew(ptr_data* data) {
 		return object_cloner<T>::cloneNew(*data->ptr);
@@ -221,9 +76,9 @@ public:
 	AutoPtr(const AutoPtr<T>& other) : BasePtr<T, true>() { this->create(__cloneNew(other.data)); }
 
 	template<typename R>
-	AutoPtr(R* ptr) : BasePtr<T, true>() { this->create((T*)ptr); }
+	explicit AutoPtr(R* ptr) : BasePtr<T, true>() { this->create((T*)ptr); }
 
-	AutoPtr(T* ptr) : BasePtr<T, true>() { this->create(ptr); }
+	explicit AutoPtr(T* ptr) : BasePtr<T, true>() { this->create(ptr); }
 
 	RefPtr<T> cloneNew() const { return object_cloner<T>::cloneNew(*this->data->ptr); }
 
@@ -238,6 +93,14 @@ public:
 		return *this;
 	}
 
+	const AutoPtr<T>& operator=(T* other) {
+		this->release();
+		this->disconnect();
+		if(needClone(other)) this->create(__cloneNew(other));
+		else this->create(other);
+		return *this;
+	}
+
 	const AutoPtr<T>& operator=(std::nullptr_t) {
 		this->release();
 		this->disconnect();
@@ -247,6 +110,9 @@ public:
 
 template<typename T>
 RefPtr<T>::RefPtr(const AutoPtr<T>& other) : BasePtr<T, false>(other.data) {} //connect
+
+template<typename T>
+RefPtr<T> EnableThisRefPtr<T>::refptr_this(){ return RefPtr<T>((T*)this); }
 NSP_BETTERCPP_END
 
 #include "../Core.hpp"

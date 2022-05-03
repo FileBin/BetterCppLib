@@ -6,7 +6,7 @@
 
 NSP_BETTERCPP_BEGIN
 
-better_class_extends(NullPtrException, Exception) {
+class NullPtrException : public Exception {
 private:
 	std::type_index type;
 	void* ptr;

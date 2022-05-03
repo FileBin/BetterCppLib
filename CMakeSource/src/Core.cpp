@@ -42,7 +42,7 @@ void EventRegistration::move(EventRegistration& other) {
 }
 
 RefPtr<EventRegistration> EventBase::createRegistration(uint id) {
-	EventRegistration* reg = new EventRegistration(this);
+	RefPtr<EventRegistration> reg{ new EventRegistration(refptr_this()) };
 	reg->coll_id = id;
 	return reg;
 }

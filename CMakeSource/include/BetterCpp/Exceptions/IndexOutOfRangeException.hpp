@@ -6,7 +6,7 @@
 
 NSP_BETTERCPP_BEGIN
 
-better_class_extends(IndexOutOfRangeException, Exception) {
+class IndexOutOfRangeException : public Exception {
 public:
 	IndexOutOfRangeException(int line_, const char* file_);
 };

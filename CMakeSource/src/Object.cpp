@@ -10,7 +10,7 @@
 NSP_BETTERCPP_BEGIN
 
 RefPtr<Object> Object::clone() const {
-	return cloneNewUnsafe();
+	return RefPtr<Object>(cloneNewUnsafe());
 	//return new Object();
 }
 

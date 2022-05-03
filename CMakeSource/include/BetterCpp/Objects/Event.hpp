@@ -14,14 +14,15 @@
 NSP_BETTERCPP_BEGIN
 struct EventRegistration;
 
-class EventBase {
+class_with_ref_ptr(EventBase) {
 protected:
 	friend struct EventRegistration;
 	RefPtr<EventRegistration> createRegistration(uint id);
 	uint getID(EventRegistration& reg);
 	void check(EventRegistration& reg);
 	virtual void unregister(uint id) = 0;
-	virtual ~EventBase() {}
+public:
+	//virtual ~EventBase() {}
 };
 
 struct EventRegistration : ICleanable {

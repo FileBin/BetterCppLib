@@ -60,12 +60,17 @@ public:
 	}
 
 	Id_t registerObj(ElemT object) {
-		return registerPtr(new ElemT(object));
+		return registerPtr(ptr_t{new ElemT(object)});
 	}
 
 	void unregister(Id_t index) {
 		collection[index] = nullptr;
 		emptyPositions.push(index);
+	}
+
+	void cleanup() {
+		collection.clear();
+		emptyPositions.clear();
 	}
 };
 

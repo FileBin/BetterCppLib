@@ -30,7 +30,18 @@ const_ref(T) as(const_ref(R) arg) {
 template<typename R, typename T>
 RefPtr<R> as(RefPtr<T> arg) {
 	assert_base<R, T>();
-	return static_cast<T*>(arg.get());
+	return RefPtr<R>(static_cast<R*>(arg.get()));
+}
+
+template<typename R, typename T>
+RefPtr<R> as(T* arg) {
+	assert_base<R, T>();
+	return RefPtr<R>(static_cast<R*>(arg));
+}
+
+template<typename T, typename... ArgsT>
+RefPtr<T> new_ref(ArgsT... args) {
+	return RefPtr<T>(new T(args...));
 }
 
 template<typename T> RefPtr<T> as(pRootType arg){ return dynamic_cast<T*>(arg); }

@@ -15,7 +15,7 @@ private:
     int _line;
     String* _file;
     String* _stack;
-    String* _info;
+    String* _info = nullptr;
 
 protected:
 
