@@ -8,7 +8,7 @@
 #ifndef INCLUDE_BETTERCPP_OBJECT_CLONER_HPP_
 #define INCLUDE_BETTERCPP_OBJECT_CLONER_HPP_
 
-#include "Core.hpp"
+#include "stdafx.hpp"
 #include "Exceptions.hpp"
 
 NSP_BETTERCPP_BEGIN
@@ -25,19 +25,18 @@ public:
 template <typename T, bool is_object = is_base<Object, T>::value, bool is_abstact = std::is_abstract<T>::value>
 struct object_cloner;
 
-
 //cloner for the object types
 template <typename T>
 struct object_cloner<T, true, true> {
 	static T* cloneNew(const_ref(T) o) {
-		return as<Object>(o).cloneNewUnsafe();
+		return ((const_ref(Object))o).cloneNewUnsafe();
 	}
 };
 
 template <typename T>
 struct object_cloner<T, true, false> {
 	static T* cloneNew(const_ref(T) o) {
-		return as<Object>(o).cloneNewUnsafe();
+		return ((const_ref(Object))o).cloneNewUnsafe();
 	}
 };
 

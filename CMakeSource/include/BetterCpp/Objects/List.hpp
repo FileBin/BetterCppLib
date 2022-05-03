@@ -8,6 +8,7 @@
 #pragma once
 
 #include "../Interfaces/Interfaces.hpp"
+#include "../Functions.hpp"
 
 NSP_BETTERCPP_BEGIN
 

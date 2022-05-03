@@ -17,7 +17,7 @@ String IEnumerable::toString(const_ref(IEnumerable) collection) {
 		if(!empty)
 			str += ", ";
 		const Object& o = en->current();
-		str += String::toString<const_ref(Object)>(o);
+		str += String::toString<const Object&>(o);
 		empty = false;
 	}
 	if(empty)

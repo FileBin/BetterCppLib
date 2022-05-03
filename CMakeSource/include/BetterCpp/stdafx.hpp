@@ -3,10 +3,12 @@
 #include <bits/stdc++.h>
 
 #ifdef _MSC_VER
-
+#include "windows.h"
 #include "Dbghelp.h"
 #pragma comment(lib, "Dbghelp.lib")
-
+#undef min
+#undef max
+#undef GetObject
 #endif
 
 #include "macros.h"

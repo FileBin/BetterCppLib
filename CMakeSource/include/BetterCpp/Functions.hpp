@@ -17,7 +17,7 @@ uint ArraySize(T(&)[size]){ return size; }
 template<typename R, typename T>
 constexpr void assert_base(){ static_assert(is_base<R, T>::value, "Compilation error: R isn't base of T!"); }
 
-template<typename T> pRootType root(RefPtr<T> arg) {
+template<typename T> RefPtr<RootType> root(RefPtr<T> arg) {
 assert_base<RootType, T>();
 return *(pRootType*)&arg;
 }
@@ -44,9 +44,9 @@ RefPtr<T> new_ref(ArgsT... args) {
 	return RefPtr<T>(new T(args...));
 }
 
-template<typename T> RefPtr<T> as(pRootType arg){ return dynamic_cast<T*>(arg); }
+template<typename T> RefPtr<T> as(RefPtr<RootType> arg){ return dynamic_cast<T*>(arg); }
 template<typename T> bool implements(const_ref(RootType) arg){ if(as<T>(&arg)) return true; return false; }
-template<typename T> bool implements(pRootType arg){ if(as<T>(arg)) return true; return false; }
+template<typename T> bool implements(RefPtr<RootType> arg){ if(as<T>(arg)) return true; return false; }
 
 void for_each(const_ref(IEnumerable) coll, std::function<void(const_ref(Object))> func);
 
