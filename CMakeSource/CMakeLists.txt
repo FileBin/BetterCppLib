@@ -83,13 +83,14 @@ set(CMAKE_CXX_STANDARD 20)
 
 
 if(WIN32)
-#copy dll
-add_custom_command(TARGET BetterCpp POST_BUILD   # Adds a post-build event to MyTest
-    COMMAND ${CMAKE_COMMAND}
-        -E copy_if_different                    # which executes "cmake - E copy_if_different..."
-        ${DLLs_x64}                           # <--this is in-file
-        ${CMAKE_BINARY_DIR})                  # <--this is out-file path
-
+#copy dll if not empty list
+if (NOT "${DLLs_x64}" STREQUAL "")
+    add_custom_command(TARGET BetterCpp POST_BUILD   # Adds a post-build event to MyTest
+        COMMAND ${CMAKE_COMMAND}
+            -E copy_if_different                    # which executes "cmake - E copy_if_different..."
+            ${DLLs_x64}                           # <--this is in-file
+            ${CMAKE_BINARY_DIR})                  # <--this is out-file path
+    endif()
 endif(WIN32)
 
 #copy resources
@@ -97,9 +98,10 @@ add_custom_target(Resources ALL DEPENDS ${RESOURCES})
 set(OUT_RES_DIR ${CMAKE_BINARY_DIR}/resources)
 
 file(MAKE_DIRECTORY ${OUT_RES_DIR})
-
-add_custom_command(TARGET Resources   # Adds a post-build event to MyTest
-    COMMAND ${CMAKE_COMMAND}
+if(EXISTS ${RESOURCES_PATH})
+    add_custom_command(TARGET Resources   # Adds a post-build event to MyTest
+        COMMAND ${CMAKE_COMMAND}
         -E copy_directory                    # which executes "cmake - E copy_if_different..."
         ${RESOURCES_PATH}                           # <--this is in-file
         ${OUT_RES_DIR})          # <--this is out-file path
+endif()
