@@ -44,8 +44,8 @@ protected:
 	Object() = default;
 public:
 
-	RefPtr<Object> clone() const;
-	virtual Object* cloneNewUnsafe() const = 0;
+	//RefPtr<Object> clone() const;
+	virtual RefPtr<Object> clone() const = 0;
 	virtual const Type type() const = 0;
 	virtual ~Object() {}
 
@@ -70,12 +70,15 @@ NSP_BETTERCPP_END
 NSP_BETTERCPP_BEGIN
 
 template<typename Derived>
-class Object_CRTP : public Object {
+class Object_CRTP : public EnableThisRefPtr<Derived>, public Object {
 protected:
 	Object_CRTP() = default;
 public:
-	Object* cloneNewUnsafe() const override {
-		return new Derived(dynamic_cast<Derived const&>(*this));
+	RefPtr<Object> clone() const override {
+		return new_ref<Derived, const_ref(Derived)>(
+				*dynamic_cast<const Derived*>(this)
+				);
+		//return new Derived(dynamic_cast<Derived const&>(*this));
 	}
 
 	const Type type() const override {

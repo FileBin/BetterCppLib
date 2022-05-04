@@ -155,14 +155,14 @@ public:
 	}
 
 	RefPtr<IEnumerator> getEnumerator() const override {
-		return as<IEnumerator, Enumerator>(new Enumerator(data, data + size));
+		return as<IEnumerator, Enumerator>(new_ref<Enumerator>(data, data + size));
 	}
 	RefPtr<IEnumeratorT<T>> getEnumeratorT() const override {
-		return as<IEnumeratorT<T>, Enumerator>(new Enumerator(data, data + size));
+		return new_ref<Enumerator>(data, data + size);
 	}
 
 private:
-	better_class(Enumerator) better_implements(public IEnumeratorT<T>) {
+	struct Enumerator : public IEnumeratorT<T> {
 	public:
 		T* cur, *begin, *end;
 

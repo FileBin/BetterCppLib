@@ -9,15 +9,15 @@
 
 NSP_BETTERCPP_BEGIN
 
-RefPtr<Object> Object::clone() const {
+/*RefPtr<Object> Object::clone() const {
 	return RefPtr<Object>(cloneNewUnsafe());
 	//return new Object();
-}
+}*/
 
-Object* Object::cloneNewUnsafe() const {
+/*Object* Object::cloneNewUnsafe() const {
 	THROW_EXCEPTION((String(type().info.name()) + " is abstract class").toUtf8().c_str());
 	//return new Object();
-}
+}*/
 
 const Type Object::type() const {
 	return Type(typeid(*this), sizeof(*this));

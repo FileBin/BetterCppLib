@@ -30,6 +30,8 @@ public:
 	~String();
 	String();
 	String(const_ref(String) other);
+	const String& operator=(const_ref(String) other);
+
 	String(const char_cptr utf8_str);
 	String(const wchar_cptr c_wstr);
 

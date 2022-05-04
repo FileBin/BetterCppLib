@@ -22,6 +22,12 @@ String::String(const_ref(String) other) {
 	wcscpy(data, other.data);
 }
 
+const String& String::operator=(const_ref(String) other) {
+	data = (wchar_t*)realloc(data, sizeof(wchar_t)*(wcslen(other.data) + 1));
+	wcscpy(data, other.data);
+	return *this;
+}
+
 String::String(const char_cptr str) {
 	#ifdef _MSC_VER
 	int size_needed = MultiByteToWideChar(CP_UTF8, 0, str, (int)strlen(str), NULL, 0);
@@ -54,7 +60,8 @@ String::String(const std::wstring ws){
 }
 
 String& String::append(String other) {
-	data = (wchar_ptr)realloc(data, wcslen(data) + wcslen(other.data) + 1);
+	uint size = wcslen(data) + wcslen(other.data) + 1;
+	data = (wchar_ptr)realloc(data, size * sizeof(wchar_t));
 	wcscat(data, other.data);
 	return *this;
 }

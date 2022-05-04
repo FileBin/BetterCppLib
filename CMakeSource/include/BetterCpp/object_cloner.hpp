@@ -25,27 +25,33 @@ public:
 template <typename T, bool is_object = is_base<Object, T>::value, bool is_abstact = std::is_abstract<T>::value>
 struct object_cloner;
 
+NSP_BETTERCPP_END
+
+#include "Objects/Pointers.hpp"
+
+NSP_BETTERCPP_BEGIN
+
 //cloner for the object types
 template <typename T>
 struct object_cloner<T, true, true> {
-	static T* cloneNew(const_ref(T) o) {
-		return ((const_ref(Object))o).cloneNewUnsafe();
+	static RefPtr<T> cloneNew(const_ref(T) o) {
+		return ((const_ref(Object))o).clone();
 	}
 };
 
 template <typename T>
 struct object_cloner<T, true, false> {
-	static T* cloneNew(const_ref(T) o) {
-		return ((const_ref(Object))o).cloneNewUnsafe();
+	static RefPtr<T> cloneNew(const_ref(T) o) {
+		return ((const_ref(Object))o).clone();
 	}
 };
 
 //cloner for the abstract non object types
 template <typename T>
 struct object_cloner<T, false, true> {
-	static T* cloneNew(const_ref(T) o) {
+	static RefPtr<T> cloneNew(const_ref(T) o) {
 		const Object* object = dynamic_cast<const Object*>(&o);
-		if(object) return (T*)object->cloneNewUnsafe();
+		if(object) return (T*)object->clone();
 		THROW_EXCEPTION((std::string(typeid(T).name()) + " is abstract!").c_str());
 		return nullptr;
 	}
@@ -54,8 +60,8 @@ struct object_cloner<T, false, true> {
 //cloner for the not abstract non object types
 template <typename T>
 struct object_cloner<T, false, false> {
-	static T* cloneNew(const_ref(T) o) {
-		return new T(o);
+	static RefPtr<T> cloneNew(const_ref(T) o) {
+		return RefPtr<T>(new T(o));
 	}
 };
 

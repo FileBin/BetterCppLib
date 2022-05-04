@@ -8,7 +8,10 @@
 #include "pch.hpp"
 
 NSP_BETTERCPP_BEGIN
-
+struct exception_data {
+	String stack = "";
+	String info = "";
+};
 String Exception::getStack() {
 #ifdef _MSC_VER
 	HANDLE process = GetCurrentProcess();
@@ -41,35 +44,33 @@ String Exception::getStack() {
 #endif
 }
 
-Exception::Exception(const char* msg, int line, const char* file) : std::runtime_error(msg), _line(line), _file(new String(file)) {
-	_stack = new String(getStack());
+Exception::Exception(const char* msg, int line, const char* file) : std::runtime_error(msg), _line(line), _file(file) {
+	data = new exception_data;
+	data->stack = getStack();
 }
 
 int Exception::line() const {
 	return _line;
 }
 String Exception::file() const {
-	return *_file;
+	return _file;
 }
 String Exception::stack() const {
-	return *_stack;
+	return data->stack;
 }
 String Exception::info() const{
-	return *_info;
+	return data->info;
 }
 String Exception::msg() const{
 	return what();
 }
 
 Exception::~Exception() {
-	delete _file;
-	delete _stack;
-	delete _info;
+	delete data;
 }
 
 void Exception::setInfo(String info) {
-	if(_info) delete _info;
-	_info = new String(info);
+	data->info = info;
 }
 
 IndexOutOfRangeException::IndexOutOfRangeException(int line_, const char* file_) : Exception("Index was out of range!", line_, file_) {}

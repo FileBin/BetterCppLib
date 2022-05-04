@@ -17,7 +17,12 @@ NSP_BETTERCPP_BEGIN
 template<typename T>
 class RefPtr : public BasePtr<T, false> {
 public:
-
+	template<typename R>
+	RefPtr(const RefPtr<R>& other) : BasePtr<T, false>() {
+		static_assert(is_base<R,T>::value || is_base<T,R>::value, "Can't convert R to T");
+		this->data = (ptr_cluster_hub<T>*)other.data;
+		other.data->incr();
+	} //connect constructor
 	RefPtr(const RefPtr<T>& other) : BasePtr<T, false>(other.data) {} //connect constructor
 
 	RefPtr(const AutoPtr<T>& other);
@@ -65,18 +70,27 @@ class AutoPtr : public BasePtr<T, true> {
 private:
 	typedef ptr_cluster_hub<T> ptr_data;
 friend class RefPtr<T>;
-	static T* __cloneNew(ptr_data* data) {
+	static RefPtr<T> __cloneNew(ptr_data* data) {
 		return object_cloner<T>::cloneNew(*data->ptr);
+	}
+
+	template<typename R>
+	void clone(ptr_cluster_hub<R>* hub) {
+		auto ptr = __cloneNew(hub);
+		this->data = ptr.data;
+		this->data->incr();
 	}
 public:
 	AutoPtr() : BasePtr<T, true>() {}
 
 	AutoPtr(const RefPtr<T>& other) : BasePtr<T, true>(other.data) {} //try connect
 
-	AutoPtr(const AutoPtr<T>& other) : BasePtr<T, true>() { this->create(__cloneNew(other.data)); }
+	AutoPtr(const AutoPtr<T>& other) : BasePtr<T, true>() {
+		clone(other.data);
+	}
 
 	template<typename R>
-	explicit AutoPtr(R* ptr) : BasePtr<T, true>() { this->create((T*)ptr); }
+	explicit AutoPtr(R* ptr) : BasePtr<T, true>() { this->create(dynamic_cast<T*>(ptr)); }
 
 	explicit AutoPtr(T* ptr) : BasePtr<T, true>() { this->create(ptr); }
 
@@ -86,10 +100,10 @@ public:
 		this->release();
 	}
 
-	const AutoPtr<T>& operator=(const AutoPtr<T>& other) {
+	const AutoPtr<T>& operator=(const BasePtrFunctional<T>& other) {
 		this->release();
 		this->disconnect();
-		this->create(__cloneNew(other.data));
+		clone(other.data);
 		return *this;
 	}
 

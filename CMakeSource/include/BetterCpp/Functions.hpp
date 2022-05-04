@@ -39,9 +39,22 @@ RefPtr<R> as(T* arg) {
 	return RefPtr<R>(static_cast<R*>(arg));
 }
 
+template<typename T, typename... Args>
+struct object_instancer {
+	static RefPtr<T> create(Args... args) {
+		if(is_base<EnableThisRefPtr<T>, T>::value) {
+			auto ptr = (EnableThisRefPtr<T>*)(new T(args...));
+			ptr->allocated = true;
+			return RefPtr<T>((T*)ptr);
+		}
+		return RefPtr<T>(new T(args...));
+	}
+};
+
 template<typename T, typename... ArgsT>
 RefPtr<T> new_ref(ArgsT... args) {
-	return RefPtr<T>(new T(args...));
+	//return RefPtr<T>(new T(args...));
+	return object_instancer<T, ArgsT...>::create(args...);
 }
 
 template<typename T> RefPtr<T> as(RefPtr<RootType> arg){ return dynamic_cast<T*>(arg); }

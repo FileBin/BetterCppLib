@@ -10,12 +10,13 @@ NSP_BETTERCPP_BEGIN
 
 better_class_proto(String);
 
+struct exception_data;
+
 class Exception : public std::runtime_error {
 private:
     int _line;
-    String* _file;
-    String* _stack;
-    String* _info = nullptr;
+    const char* _file;
+    exception_data* data;
 
 protected:
 
