@@ -1,6 +1,8 @@
 #pragma once
 
-#include <bits/stdc++.h>
+#include "bits/stdc++.h"
+#include <typeindex>
+#include <type_traits>
 
 #ifdef _MSC_VER
 #include "windows.h"

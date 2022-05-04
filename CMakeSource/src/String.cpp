@@ -31,7 +31,7 @@ const String& String::operator=(const_ref(String) other) {
 String::String(const char_cptr str) {
 	#ifdef _MSC_VER
 	int size_needed = MultiByteToWideChar(CP_UTF8, 0, str, (int)strlen(str), NULL, 0);
-    WCHAR* data = (WCHAR*)malloc(size_needed);
+    data = (WCHAR*)malloc(size_needed);
     MultiByteToWideChar(CP_UTF8, 0, &str[0], (int)strlen(str), data, size_needed);
 	#else
 	std::wstring_convert<std::codecvt_utf8<wchar_t>> utf8_conv;
@@ -47,11 +47,18 @@ String::String(const wchar_cptr src) {
 }
 
 String::String(const std::string str) {
+#ifdef _MSC_VER
+	const char* cstr = str.c_str();
+	int size_needed = MultiByteToWideChar(CP_UTF8, 0, cstr, (int)strlen(cstr), NULL, 0);
+	data = (WCHAR*)malloc(size_needed);
+	MultiByteToWideChar(CP_UTF8, 0, &cstr[0], (int)strlen(cstr), data, size_needed);
+#else
 	std::wstring_convert<std::codecvt_utf8<wchar_t>> utf8_conv;
 	auto ws = utf8_conv.from_bytes(str.c_str());
 	const wchar_t* src = ws.c_str();
 	data = new wchar_t[wcslen(src) + 1];
 	wcscpy(data, src);
+#endif
 }
 String::String(const std::wstring ws){
 	const wchar_t* src = ws.c_str();

@@ -26,6 +26,7 @@
 //interface
 #define better_interface_proto(InterfaceName) struct InterfaceName
 #define better_interface(InterfaceName) better_interface_proto(InterfaceName) : public ::NSP_BETTERCPP::Interface
+#define better_interface_implements(InterfaceName, ...) better_interface_proto(InterfaceName) : __VA_ARGS__
 
 #define foreach(coll)  for(auto enumerator = coll.getEnumeratorT(); enumerator->next(); )
 #define foreach_elem (enumerator->currentT())

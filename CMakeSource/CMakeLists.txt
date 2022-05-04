@@ -58,6 +58,12 @@ file(GLOB_RECURSE DLLs_x64 "${CMAKE_SOURCE_DIR}/lib/*.dll")
 
 file(GLOB_RECURSE RESOURCES "${RESOURCES_PATH}/*.*")
 
+
+if(MSVC)
+    add_compile_options(/WX-)
+    add_link_options(/WX-)
+endif()
+
 #Source config
 
 #BetterCpp

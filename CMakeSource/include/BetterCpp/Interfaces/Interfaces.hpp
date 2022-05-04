@@ -20,7 +20,7 @@ better_interface(IEnumerator) {
 };
 
 template<typename T>
-better_interface(IEnumeratorT) better_implements(IEnumerator) {
+better_interface_implements(IEnumeratorT, public IEnumerator) {
 	virtual const_ref(T) currentT() const = 0;
 	virtual ~IEnumeratorT() {}
 };
@@ -71,7 +71,7 @@ better_interface(IEnumerable) {
 };
 
 template<typename T>
-better_interface(ICollectionT) better_implements(public IEnumerableT<T>, public IEnumerable) {
+better_interface_implements(ICollectionT, public IEnumerableT<T>, public IEnumerable) {
 	virtual bool empty() const = 0;
 	virtual uint count() const = 0;
 
@@ -83,7 +83,7 @@ better_interface(ICollectionT) better_implements(public IEnumerableT<T>, public 
 };
 
 template<typename T>
-better_interface(IListT) better_implements(public ICollectionT<T>) {
+better_interface_implements(IListT, public ICollectionT<T>) {
 	virtual const_ref(T) first() const = 0;
 	virtual const_ref(T) last() const = 0;
 	virtual const_ref(T) at(uint index) const = 0;
