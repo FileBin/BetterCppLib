@@ -11,7 +11,6 @@
 
 NSP_BETTERCPP_BEGIN
 
-//TODO make class EnableThisRefPtr<T>
 template<typename T>
 class EnableThisRefPtr;
 
@@ -21,84 +20,106 @@ class AutoPtr;
 template<typename T>
 class RefPtr;
 
+template<typename T>
+void default_destroy(void* ptr) {
+	delete (T*)ptr;
+}
+
+struct ptr_cluster_hub_root;
+
+namespace ptr {
+	namespace flags {
+		constexpr byte has_owner 	= 0x1;
+		constexpr byte extended 	= 0x2;
+		constexpr byte is_class 	= 0x4;
+	};
+}
+
+//21 bytes for 64-bit
+//13 bytes for 64-bit
 struct ptr_cluster_hub_base {
 protected:
+	friend struct ptr_cluster_hub_root;
 	void* ptr;
 	ptr_cluster_hub_base* next = 0;
 	uint ref_count = 1;
 	byte flags;
 public:
-	static constexpr byte has_owner_bit = 0x1;
-	static constexpr byte extended_bit = 0x2;
 
-	ptr_cluster_hub_base(void* ptr, byte flags = 0) : ptr(ptr), flags(flags) {}
+	ptr_cluster_hub_base(void* ptr, byte flags = 0)
+	: ptr(ptr),
+	  flags(flags) {}
 
-	void* get() { return ptr; }
+	ptr_cluster_hub_base(const_ref(ptr_cluster_hub_base)) = delete;
+
+	template<typename T>
+	T* get() {
+		return (T*)ptr;
+	}
+
+	template<typename T>
+	T** get_address() {
+		return (T**)&ptr;
+	}
 
 	void incr() {
 		++ref_count;
 	}
 	void decr();
 
+	ptr_cluster_hub_base* push(void* inner_ptr, bool is_owner);
+
+	bool has_refs();
+
+	bool has_owner() {
+		return flags & ptr::flags::has_owner;
+	}
+
+	void addFlag(byte flag) {
+		flags |= flag;
+	}
+
 	void try_destroy();
+
+	ptr_cluster_hub_root* root();
 };
 
-template<typename T>
-struct ptr_cluster_hub {
-	void (*destoy_func)(T*) = 0;
-	T* ptr;
-	uint ref_count;
-	bool has_owner;
+//29 bytes for 64-bit
+//17 bytes for 32-bit
+struct ptr_cluster_hub_root : public ptr_cluster_hub_base {
+public:
+	void (*destoy_func)(void*);
 
-	ptr_cluster_hub(T* obj, bool is_owner) : ptr(obj), has_owner(is_owner), ref_count(1) {}
-
-	void incr() {
-		++this->ref_count;
-	}
-
-	void decr() {
-		--this->ref_count;
-		if(this->ref_count == 0) {
-			destroyObj();
-			delete this;
-			return;
-		}
-	}
+	template<typename T>
+	ptr_cluster_hub_root(T* obj, bool is_owner);
 
 	void destroyObj();
 
-	//void destroy() {
-	//	destroyObj();
-	//	delete this;
-	//}
-};
-
-struct ptr_cluster_extended_hub : public ptr_cluster_hub_base {
 protected:
-	ptr_cluster_hub_base* parent;
-public:
-	ptr_cluster_extended_hub(void* obj, ptr_cluster_hub_base* parent, bool is_owner) :
-		ptr_cluster_hub_base(obj,
-				is_owner ?
-						ptr_cluster_hub_base::has_owner_bit | ptr_cluster_hub_base::extended_bit
-						: ptr_cluster_hub_base::extended_bit),
-		parent(parent) {}
-
+	friend struct ptr_cluster_hub_base;
 	void destroy() {
+		destroyObj();
+		ptr_cluster_hub_base* it = next;
+		while(it){
+			ptr_cluster_hub_base* t = it;
+			it = it->next;
+			delete t;
+		}
 		delete this;
 	}
 };
 
-/*void ptr_cluster_hub_base::decr() {
-	--ref_count;
-	if(ref_count == 0) {
-		if(flags & has_owner_bit)
-			static_cast<ptr_cluster_extended_hub*>(this)->destroy();
-		else
-			static_cast<ptr_cluster_hub*>(this)->destroy();
-	}
-}*/
-
+//29 bytes for 64-bit
+//17 bytes for 32-bit
+struct ptr_cluster_extended_hub : public ptr_cluster_hub_base {
+protected:
+	friend struct ptr_cluster_hub_base;
+	ptr_cluster_hub_root* root_hub;
+public:
+	ptr_cluster_extended_hub(void* obj, ptr_cluster_hub_root* parent, bool is_owner) :
+		ptr_cluster_hub_base(obj, ptr::flags::extended | (is_owner ? ptr::flags::has_owner : 0)),
+		root_hub(parent) {}
+};
 
 template<typename T>
 class BasePtrFunctional {
@@ -109,52 +130,59 @@ protected:
 	template<typename R>
 	friend class RefPtr;
 
-	ptr_cluster_hub<T> *data;
+	template<typename Fr, typename To, bool is_base>
+	friend struct object_converter;
+	ptr_cluster_hub_base *data;
 
-	BasePtrFunctional(ptr_cluster_hub<T>* data) : data(data) {}
+	BasePtrFunctional(ptr_cluster_hub_base* data) : data(data) {}
 
 public:
 	bool isNull() const {
-		if (data) return data->ptr == nullptr;
+		if (data) return data->get<T>() == nullptr;
 		return true;
 	}
 
 	void setDestoyer(void (*destroyer)(T*)){
-		data->destoy_func = destroyer;
+		data->root()->destoy_func = (void (*)(void*))destroyer;
 	}
 
 	bool isNotNull() const {
-		if (data) return data->ptr != nullptr;
+		if (data) return data->get<T>() != nullptr;
 		return false;
 	}
 
 	void release() {
 		if (isNotNull()) {
-			data->destroyObj();
+			data->root()->destroyObj();
 		}
 	}
 
-	T* get() const {
-		if(data) return data->ptr;
+	T* get() {
+		if(data) return data->get<T>();
 		THROW_NULL_PTR_EXCEPTION(data);
 	}
 
-	T** getAddress() const {
-		return data;
+	T* cget() const {
+		if(data) return data->get<T>();
+		THROW_NULL_PTR_EXCEPTION(data);
 	}
 
-	T* operator->() const {
-		if(data) return data->ptr;
+	T** getAddress() {
+		return data->get_address<T>();
+	}
+
+	T* operator->() {
+		if(data) return data->get<T>();
 		THROW_NULL_PTR_EXCEPTION(data);
 	}
 
 	T& operator*() {
-		if(data) return *data->ptr;
+		if(data) return *data->get<T>();
 		THROW_NULL_PTR_EXCEPTION(data);
 	}
 
 	const T& operator*() const {
-		if(data) return *data->ptr;
+		if(data) return *data->get<T>();
 		THROW_NULL_PTR_EXCEPTION(data);
 	}
 };
@@ -168,10 +196,10 @@ protected:
 	BasePtr() : BasePtrFunctional<T>(nullptr) {}
 
 	void create(T* obj)  {
-		this->data = new ptr_cluster_hub<T>(obj, false);
+		this->data = new ptr_cluster_hub_root((T*)obj, false);
 	}
 
-	BasePtr(ptr_cluster_hub<T>* other) : BasePtrFunctional<T>(other) {
+	BasePtr(ptr_cluster_hub_base* other) : BasePtrFunctional<T>(other) {
 		this->data->incr();
 	}
 
@@ -179,7 +207,7 @@ protected:
 		disconnect();
 	}
 
-	void move(ptr_cluster_hub<T>* other) {
+	void move(ptr_cluster_hub_base* other) {
 		if(this->data == other) return;
 		disconnect();
 		this->data = other;
@@ -201,27 +229,27 @@ protected:
 	BasePtr() : BasePtrFunctional<T>(nullptr) {}
 
 	void create(T* obj)  {
-		this->data = new ptr_cluster_hub<T>(obj, true);
+		this->data = new ptr_cluster_hub_root((T*)obj, true);
 	}
 
-	BasePtr(ptr_cluster_hub<T>* other) : BasePtrFunctional<T>(other) {
-		if(other->has_owner) THROW_EXCEPTION("One pointer cluster can't have two or more owners!");
+	BasePtr(ptr_cluster_hub_base* other) : BasePtrFunctional<T>(other) {
+		if(other->has_owner()) THROW_EXCEPTION("One pointer cluster can't have two or more owners!");
 		this->data->incr();
-		this->data->has_owner = true;
+		this->data->addFlag(ptr::flags::has_owner);
 	}
 
 	~BasePtr() {
 		disconnect();
 	}
 
-	void move(ptr_cluster_hub<T>* other) {
+	void move(ptr_cluster_hub_base* other) {
 		if(this->data == other) return;
 		disconnect();
 		if(other) {
-			if(other->has_owner) THROW_EXCEPTION("One pointer cluster can't have two or more owners!");
+			if(other->has_owner()) THROW_EXCEPTION("One pointer cluster can't have two or more owners!");
 			this->data = other;
 			other->incr();
-			other->has_owner = true;
+			other->addFlag(ptr::flags::has_owner);
 		} else this->data = nullptr;
 	}
 
@@ -230,47 +258,38 @@ protected:
 	void disconnect() {
 		if(this->data) {
 			this->data->decr();
-			this->data->has_owner = false;
+			this->data->addFlag(ptr::flags::has_owner);
 		}
 		this->data = nullptr;
 	}
 };
 
-
-template<typename T>
-class EnableThisRefPtr {
-protected:
-	template<typename R, typename... Args>
+struct EnableThisRefPtrBase {
+	template<typename T, bool is_class, typename... Args>
 	friend struct object_instancer;
-
-	template<typename R>
-	friend struct ptr_cluster_hub;
-
-	void* operator new(size_t n) {
-		return malloc(n);
-	}
-
-	friend class BasePtr<T, false, true>;
-	friend class BasePtr<T, true, true>;
-	RefPtr<T> refptr_this();
-private:
+	friend struct ptr_cluster_hub_root;
+protected:
+	ptr_cluster_hub_root* hub = nullptr;
 	bool allocated = false;
-	ptr_cluster_hub<T>* hub = nullptr;
+	void* operator new(size_t n) { return malloc(n); } // @suppress("Function cannot be resolved")
 };
 
 template<typename T>
-void ptr_cluster_hub<T>::destroyObj() {
-	if(ptr) {
-		if(is_base<EnableThisRefPtr<T>, T>::value) {
-			auto en_ptr = (EnableThisRefPtr<T>*)ptr;
-			if(en_ptr->allocated) delete ptr;
-		} else {
-			if(destoy_func) destoy_func(ptr);
-			else delete ptr;
-		}
-	}
-	ptr = nullptr;
-}
+class EnableThisRefPtr : public EnableThisRefPtrBase {
+protected:
+	friend class BasePtr<T, false, true>;
+	friend class BasePtr<T, true, true>;
+	RefPtr<T> refptr_this();
+};
+
+template<typename T>
+ptr_cluster_hub_root::ptr_cluster_hub_root(T* obj, bool is_owner)
+: ptr_cluster_hub_base((void*)obj,
+		(is_owner ? ptr::flags::has_owner : 0) |
+		(is_base<EnableThisRefPtr<T>, T>::value ? ptr::flags::is_class : 0)
+		),
+  destoy_func(default_destroy<T>)
+  {}
 
 template<typename T>
 class BasePtr<T, false, true> : public BasePtrFunctional<T> {
@@ -283,11 +302,11 @@ protected:
 			obj.hub->incr();
 			this->data = obj.hub;
 		} else {
-			this->data = obj.hub = new ptr_cluster_hub<T>(_obj, false);
+			this->data = obj.hub = new ptr_cluster_hub_root((T*)_obj, false);
 		}
 	}
 
-	BasePtr(ptr_cluster_hub<T>* other) : BasePtrFunctional<T>(other) {
+	BasePtr(ptr_cluster_hub_base* other) : BasePtrFunctional<T>(other) {
 		this->data->incr();
 	}
 
@@ -295,7 +314,7 @@ protected:
 		disconnect();
 	}
 
-	void move(ptr_cluster_hub<T>* other) {
+	void move(ptr_cluster_hub_base* other) {
 		if(this->data == other) return;
 		disconnect();
 		this->data = other;
@@ -313,7 +332,7 @@ protected:
 		if(obj.hub) {
 			move(obj.hub);
 		} else {
-			this->data = obj.hub = new ptr_cluster_hub<T>(other, false);
+			this->data = obj.hub = new ptr_cluster_hub_root((T*)other, false);
 		}
 	}
 
@@ -335,12 +354,12 @@ protected:
 			obj.hub->incr();
 			this->data = obj.hub;
 		} else {
-			this->data = obj.hub = new ptr_cluster_hub<T>(_obj, true);
+			this->data = obj.hub = new ptr_cluster_hub_root((T*)_obj, true);
 		}
 	}
 
-	BasePtr(ptr_cluster_hub<T>* other) : BasePtrFunctional<T>(other) {
-		if(other->has_owner) THROW_EXCEPTION("One pointer cluster can't have two or more owners!");
+	BasePtr(ptr_cluster_hub_base* other) : BasePtrFunctional<T>(other) {
+		if(other->has_owner()) THROW_EXCEPTION("One pointer cluster can't have two or more owners!");
 		this->data->incr();
 	}
 
@@ -348,14 +367,14 @@ protected:
 		disconnect();
 	}
 
-	void move(ptr_cluster_hub<T>* other) {
+	void move(ptr_cluster_hub_base* other) {
 		if(this->data == other) return;
 		disconnect();
 		if(other) {
-			if(other->has_owner) THROW_EXCEPTION("One pointer cluster can't have two or more owners!");
+			if(other->has_owner()) THROW_EXCEPTION("One pointer cluster can't have two or more owners!");
 			this->data = other;
 			other->incr();
-			other->has_owner = true;
+			other->addFlag(ptr::flags::has_owner);
 		} else this->data = nullptr;
 	}
 
@@ -370,14 +389,14 @@ protected:
 		if(obj.hub) {
 			move(obj.hub);
 		} else {
-			this->data = obj.hub = new ptr_cluster_hub<T>(other, false);
+			this->data = obj.hub = new ptr_cluster_hub_root((T*)other, true);
 		}
 	}
 
 	void disconnect() {
 		if(this->data) {
 			this->data->decr();
-			this->data->has_owner = false;
+			this->data->addFlag(ptr::flags::has_owner);
 		}
 		this->data = nullptr;
 	}

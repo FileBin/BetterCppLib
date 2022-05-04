@@ -162,7 +162,7 @@ public:
 	}
 
 private:
-	struct Enumerator : public IEnumeratorT<T> {
+	better_class(Enumerator), public IEnumeratorT<T> {
 	public:
 		T* cur, *begin, *end;
 

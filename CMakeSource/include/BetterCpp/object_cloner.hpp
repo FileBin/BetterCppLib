@@ -35,14 +35,15 @@ NSP_BETTERCPP_BEGIN
 template <typename T>
 struct object_cloner<T, true, true> {
 	static RefPtr<T> cloneNew(const_ref(T) o) {
-		return ((const_ref(Object))o).clone();
+		return as<T>(((const_ref(Object))o).clone());
 	}
 };
 
 template <typename T>
 struct object_cloner<T, true, false> {
 	static RefPtr<T> cloneNew(const_ref(T) o) {
-		return ((const_ref(Object))o).clone();
+		RefPtr<Object> clone = ((const_ref(Object))o).clone();
+		return as<T>(clone);
 	}
 };
 

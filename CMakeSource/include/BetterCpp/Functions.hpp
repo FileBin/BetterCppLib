@@ -14,8 +14,29 @@ NSP_BETTERCPP_BEGIN
 template<typename T, int size>
 uint ArraySize(T(&)[size]){ return size; }
 
-template<typename R, typename T>
-constexpr void assert_base(){ static_assert(is_base<R, T>::value, "Compilation error: R isn't base of T!"); }
+template<typename From, typename To, bool is_base = is_base<To, From>::value>
+struct object_converter;
+
+template<typename From, typename To>
+struct object_converter<From, To, true> {
+	static RefPtr<To> convert(const RefPtr<From>& from) {
+		return from;
+	}
+};
+
+template<typename From, typename To>
+struct object_converter<From, To, false> {
+	static RefPtr<To> convert(const RefPtr<From>& from) {
+		RefPtr<To> to;
+		const To* ptr = dynamic_cast<const To*>(from.cget());
+		if(ptr == nullptr) return to;
+		to.data = from.data->push((void*)ptr, false);
+		return to;
+	}
+};
+
+template<typename Base, typename Derived>
+constexpr void assert_base(){ static_assert(is_base<Base, Derived>::value, "Compilation error: Base isn't base of Derived!"); }
 
 template<typename T> RefPtr<RootType> root(RefPtr<T> arg) {
 assert_base<RootType, T>();
@@ -29,8 +50,7 @@ const_ref(T) as(const_ref(R) arg) {
 
 template<typename R, typename T>
 RefPtr<R> as(RefPtr<T> arg) {
-	assert_base<R, T>();
-	return RefPtr<R>(static_cast<R*>(arg.get()));
+	return object_converter<T, R>::convert(arg);
 }
 
 template<typename R, typename T>
@@ -38,15 +58,22 @@ RefPtr<R> as(T* arg) {
 	assert_base<R, T>();
 	return RefPtr<R>(static_cast<R*>(arg));
 }
+template<typename T, bool is_class, typename... Args>
+struct object_instancer;
 
 template<typename T, typename... Args>
-struct object_instancer {
+struct object_instancer<T, true, Args...> {
 	static RefPtr<T> create(Args... args) {
-		if(is_base<EnableThisRefPtr<T>, T>::value) {
-			auto ptr = (EnableThisRefPtr<T>*)(new T(args...));
-			ptr->allocated = true;
-			return RefPtr<T>((T*)ptr);
-		}
+		T* obj = new T(args...);
+		auto ptr = static_cast<EnableThisRefPtr<T>*>(obj);
+		ptr->allocated = true;
+		return RefPtr<T>(obj);
+	}
+};
+
+template<typename T, typename... Args>
+struct object_instancer<T, false, Args...> {
+	static RefPtr<T> create(Args... args) {
 		return RefPtr<T>(new T(args...));
 	}
 };
@@ -54,7 +81,8 @@ struct object_instancer {
 template<typename T, typename... ArgsT>
 RefPtr<T> new_ref(ArgsT... args) {
 	//return RefPtr<T>(new T(args...));
-	return object_instancer<T, ArgsT...>::create(args...);
+	auto ref = object_instancer<T, is_base<EnableThisRefPtr<T>, T>::value, ArgsT...>::create(args...);
+	return ref;
 }
 
 template<typename T> RefPtr<T> as(RefPtr<RootType> arg){ return dynamic_cast<T*>(arg); }

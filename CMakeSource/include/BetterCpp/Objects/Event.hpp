@@ -84,7 +84,7 @@ public:
 		foreach(coll) {
 			auto& func = foreach_elem;//en->currentT();
 			if(func.isNull()) return;
-			(*func.get())(args...);
+			(*func)(args...);
 		}
 		//}
 	}
