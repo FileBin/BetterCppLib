@@ -68,7 +68,7 @@ struct object_instancer<T, true, Args...> {
 		auto ptr = static_cast<EnableThisRefPtr<T>*>(obj);
 		ptr->allocated = true;
 		RefPtr<T> ref(obj);
-		((ptr_cluster_hub_root*)ref.data)->base_ref = ptr;
+		((ptr_cluster_hub_root*)ref.data)->enable_ptr_ref_offset.set_offset<T, EnableThisRefPtrBase>(obj);
 		return ref;
 	}
 };

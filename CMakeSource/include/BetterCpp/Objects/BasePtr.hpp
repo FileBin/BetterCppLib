@@ -29,6 +29,27 @@ void default_destroy(void* ptr) {
 
 struct ptr_cluster_hub_root;
 
+//TODO make ptr_offset_struct
+struct ptr_offset {
+private:
+	static constexpr char unset = -128;
+	char offset = unset;
+public:
+	template<typename From, typename To>
+	void set_offset(From* ptr) {
+		size_t ptr_T = (size_t)((void*)ptr);
+		size_t ptr_with_offset = (size_t)((void*)dynamic_cast<To*>(ptr));
+		if (ptr_with_offset) {
+			offset = ptr_with_offset - ptr_T;
+		}
+	}
+
+	void* get_with_offset(void* ptr) {
+		if (offset == unset) return nullptr;
+		return (char*)ptr + offset;
+	}
+};
+
 namespace ptr {
 	namespace flags {
 		constexpr byte has_owner 	= 0x1;
@@ -92,7 +113,7 @@ struct ptr_cluster_hub_root : public ptr_cluster_hub_base {
 public:
 	void (*destoy_func)(void*);
 	//TODO move this in other struct
-	EnableThisRefPtrBase* base_ref = 0;
+	ptr_offset enable_ptr_ref_offset;
 
 	template<typename T>
 	ptr_cluster_hub_root(T* obj, bool is_owner);
@@ -140,6 +161,8 @@ protected:
 
 	template<typename T, bool is_class, typename... Args>
 	friend struct object_instancer;
+
+
 	ptr_cluster_hub_base *data;
 
 	BasePtrFunctional(ptr_cluster_hub_base* data) : data(data) {}

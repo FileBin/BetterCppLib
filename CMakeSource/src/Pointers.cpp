@@ -56,7 +56,7 @@ ptr_cluster_hub_base* ptr_cluster_hub_base::push(void* inner_ptr, bool is_owner)
 void ptr_cluster_hub_root::destroyObj() {
 	if(ptr) {
 		if(flags & ptr::flags::is_class) {
-			auto en_ptr = base_ref;
+			auto en_ptr = (EnableThisRefPtrBase*)enable_ptr_ref_offset.get_with_offset(ptr);
 			if(en_ptr)
 				if(en_ptr->allocated)
 					if(destoy_func)
