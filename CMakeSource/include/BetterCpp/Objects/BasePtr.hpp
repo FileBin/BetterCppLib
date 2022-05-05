@@ -29,22 +29,42 @@ void default_destroy(void* ptr) {
 
 struct ptr_cluster_hub_root;
 
+#ifndef PTR_OFFSET_TYPE
+#define PTR_OFFSET_TYPE short
+#endif
+
+namespace ptr {
+	typedef PTR_OFFSET_TYPE offset_t;
+}
+
 //TODO make ptr_offset_struct
 struct ptr_offset {
 private:
-	static constexpr char unset = -128;
-	char offset = unset;
+	static constexpr ptr::offset_t unset = std::numeric_limits<ptr::offset_t>::lowest();
+	ptr::offset_t offset = 0;
 public:
+	ptr_offset(bool set = true) {
+		if (!set) offset = unset;
+	}
 	template<typename From, typename To>
-	void set_offset(From* ptr) {
+	bool set_offset(From* ptr) {
 		size_t ptr_T = (size_t)((void*)ptr);
 		size_t ptr_with_offset = (size_t)((void*)dynamic_cast<To*>(ptr));
 		if (ptr_with_offset) {
 			offset = ptr_with_offset - ptr_T;
+			return true;
+		} else {
+			offset = unset;
+			return false;
 		}
 	}
 
-	void* get_with_offset(void* ptr) {
+	/*void* get_with_offset(void* ptr) {
+		if (offset == unset) return nullptr;
+		return (char*)ptr + offset;
+	}*/
+
+	void* get_with_offset(void* ptr) const {
 		if (offset == unset) return nullptr;
 		return (char*)ptr + offset;
 	}
@@ -64,7 +84,7 @@ struct ptr_cluster_hub_base {
 protected:
 	friend struct ptr_cluster_hub_root;
 	void* ptr;
-	ptr_cluster_hub_base* next = 0;
+	//ptr_cluster_hub_base* next = 0;
 	uint ref_count = 1;
 	byte flags;
 public:
@@ -80,6 +100,10 @@ public:
 		return (T*)ptr;
 	}
 
+	void* get_pvoid() {
+		return ptr;
+	}
+
 	template<typename T>
 	T** get_address() {
 		return (T**)&ptr;
@@ -90,7 +114,7 @@ public:
 	}
 	void decr();
 
-	ptr_cluster_hub_base* push(void* inner_ptr, bool is_owner);
+	//ptr_cluster_hub_base* push(void* inner_ptr, bool is_owner);
 
 	bool has_refs();
 
@@ -104,7 +128,11 @@ public:
 
 	void try_destroy();
 
-	ptr_cluster_hub_root* root();
+	void destroy_object();
+
+	void set_destroy_func(void (*destoy_func)(void*));
+
+	//ptr_cluster_hub_root* root();
 };
 
 //37 bytes for 64-bit
@@ -113,7 +141,7 @@ struct ptr_cluster_hub_root : public ptr_cluster_hub_base {
 public:
 	void (*destoy_func)(void*);
 	//TODO move this in other struct
-	ptr_offset enable_ptr_ref_offset;
+	ptr_offset enable_ptr_ref_offset{ false };
 
 	template<typename T>
 	ptr_cluster_hub_root(T* obj, bool is_owner);
@@ -124,19 +152,19 @@ protected:
 	friend struct ptr_cluster_hub_base;
 	void destroy() {
 		destroyObj();
-		ptr_cluster_hub_base* it = next;
+		/*ptr_cluster_hub_base* it = next;
 		while(it){
 			ptr_cluster_hub_base* t = it;
 			it = it->next;
 			delete t;
-		}
+		}*/
 		delete this;
 	}
 };
 
 //29 bytes for 64-bit
 //17 bytes for 32-bit
-struct ptr_cluster_extended_hub : public ptr_cluster_hub_base {
+/*struct ptr_cluster_extended_hub : public ptr_cluster_hub_base {
 protected:
 	friend struct ptr_cluster_hub_base;
 	ptr_cluster_hub_root* root_hub;
@@ -144,7 +172,7 @@ public:
 	ptr_cluster_extended_hub(void* obj, ptr_cluster_hub_root* parent, bool is_owner) :
 		ptr_cluster_hub_base(obj, ptr::flags::extended | (is_owner ? ptr::flags::has_owner : 0)),
 		root_hub(parent) {}
-};
+};*/
 
 template<typename T>
 class BasePtrFunctional {
@@ -164,8 +192,9 @@ protected:
 
 
 	ptr_cluster_hub_base *data;
+	ptr_offset offset;
 
-	BasePtrFunctional(ptr_cluster_hub_base* data) : data(data) {}
+	BasePtrFunctional(ptr_cluster_hub_base* data, ptr_offset offset) : data(data), offset(offset) {}
 
 public:
 	bool isNull() const {
@@ -174,7 +203,7 @@ public:
 	}
 
 	void setDestoyer(void (*destroyer)(T*)){
-		data->root()->destoy_func = (void (*)(void*))destroyer;
+		data->set_destroy_func((void (*)(void*))destroyer);
 	}
 
 	bool isNotNull() const {
@@ -184,17 +213,18 @@ public:
 
 	void release() {
 		if (isNotNull()) {
-			data->root()->destroyObj();
+			data->destroy_object();
 		}
 	}
 
 	T* get() {
-		if(data) return data->get<T>();
+		if (data) return (T*)offset.get_with_offset(data->get_pvoid());
+		//if(data) return data->get<T>();
 		THROW_NULL_PTR_EXCEPTION(data);
 	}
 
 	T* cget() const {
-		if(data) return data->get<T>();
+		if (data) return (T*)offset.get_with_offset(data->get_pvoid());//data->get<T>();
 		THROW_NULL_PTR_EXCEPTION(data);
 	}
 
@@ -203,17 +233,17 @@ public:
 	}
 
 	T* operator->() {
-		if(data) return data->get<T>();
+		if (data) return (T*)offset.get_with_offset(data->get_pvoid());//data->get<T>();
 		THROW_NULL_PTR_EXCEPTION(data);
 	}
 
 	T& operator*() {
-		if(data) return *data->get<T>();
+		if (data) return *((T*)offset.get_with_offset(data->get_pvoid()));//*data->get<T>();
 		THROW_NULL_PTR_EXCEPTION(data);
 	}
 
 	const T& operator*() const {
-		if(data) return *data->get<T>();
+		if (data) return  *((T*)offset.get_with_offset(data->get_pvoid()));//*data->get<T>();
 		THROW_NULL_PTR_EXCEPTION(data);
 	}
 };
@@ -224,13 +254,13 @@ class BasePtr;
 template<typename T>
 class BasePtr<T, false, false> : public BasePtrFunctional<T> {
 protected:
-	BasePtr() : BasePtrFunctional<T>(nullptr) {}
+	BasePtr() : BasePtrFunctional<T>(nullptr, {}) {}
 
 	void create(T* obj)  {
 		this->data = new ptr_cluster_hub_root((T*)obj, false);
 	}
 
-	BasePtr(ptr_cluster_hub_base* other) : BasePtrFunctional<T>(other) {
+	BasePtr(ptr_cluster_hub_base* other, ptr_offset offset) : BasePtrFunctional<T>(other, offset) {
 		this->data->incr();
 	}
 
@@ -238,10 +268,11 @@ protected:
 		disconnect();
 	}
 
-	void move(ptr_cluster_hub_base* other) {
+	void move(ptr_cluster_hub_base* other, ptr_offset offset) {
 		if(this->data == other) return;
 		disconnect();
 		this->data = other;
+		this->offset = offset;
 		if(other) other->incr();
 	}
 
@@ -257,13 +288,13 @@ template<typename T>
 class BasePtr<T, true, false> : public BasePtrFunctional<T> {
 protected:
 
-	BasePtr() : BasePtrFunctional<T>(nullptr) {}
+	BasePtr() : BasePtrFunctional<T>(nullptr, {}) {}
 
 	void create(T* obj)  {
 		this->data = new ptr_cluster_hub_root((T*)obj, true);
 	}
 
-	BasePtr(ptr_cluster_hub_base* other) : BasePtrFunctional<T>(other) {
+	BasePtr(ptr_cluster_hub_base* other, ptr_offset offset) : BasePtrFunctional<T>(other, offset) {
 		if(other->has_owner()) THROW_EXCEPTION("One pointer cluster can't have two or more owners!");
 		this->data->incr();
 		this->data->addFlag(ptr::flags::has_owner);
@@ -273,12 +304,13 @@ protected:
 		disconnect();
 	}
 
-	void move(ptr_cluster_hub_base* other) {
+	void move(ptr_cluster_hub_base* other, ptr_offset offset) {
 		if(this->data == other) return;
 		disconnect();
 		if(other) {
 			if(other->has_owner()) THROW_EXCEPTION("One pointer cluster can't have two or more owners!");
 			this->data = other;
+			this->offset = offset;
 			other->incr();
 			other->addFlag(ptr::flags::has_owner);
 		} else this->data = nullptr;
@@ -325,7 +357,7 @@ ptr_cluster_hub_root::ptr_cluster_hub_root(T* obj, bool is_owner)
 template<typename T>
 class BasePtr<T, false, true> : public BasePtrFunctional<T> {
 protected:
-	BasePtr() : BasePtrFunctional<T>(nullptr) {}
+	BasePtr() : BasePtrFunctional<T>(nullptr, {}) {}
 
 	void create(T* _obj)  {
 		EnableThisRefPtr<T>& obj = static_cast<EnableThisRefPtr<T>&>(*_obj);
@@ -337,7 +369,7 @@ protected:
 		}
 	}
 
-	BasePtr(ptr_cluster_hub_base* other) : BasePtrFunctional<T>(other) {
+	BasePtr(ptr_cluster_hub_base* other, ptr_offset offset) : BasePtrFunctional<T>(other, offset) {
 		this->data->incr();
 	}
 
@@ -345,9 +377,10 @@ protected:
 		disconnect();
 	}
 
-	void move(ptr_cluster_hub_base* other) {
+	void move(ptr_cluster_hub_base* other, ptr_offset offset) {
 		if(this->data == other) return;
 		disconnect();
+		this->offset = offset;
 		this->data = other;
 		if(other) other->incr();
 	}
@@ -361,9 +394,10 @@ protected:
 		if(other == nullptr) disconnect();
 		EnableThisRefPtr<T>& obj = static_cast<EnableThisRefPtr<T>&>(*other);
 		if(obj.hub) {
-			move(obj.hub);
+			move(obj.hub, {});
 		} else {
 			this->data = obj.hub = new ptr_cluster_hub_root((T*)other, false);
+			this->offset = {};
 		}
 	}
 
@@ -377,7 +411,7 @@ template<typename T>
 class BasePtr<T, true, true> : public BasePtrFunctional<T> {
 protected:
 
-	BasePtr() : BasePtrFunctional<T>(nullptr) {}
+	BasePtr() : BasePtrFunctional<T>(nullptr, {}) {}
 
 	void create(T* _obj)  {
 		EnableThisRefPtr<T>& obj = static_cast<EnableThisRefPtr<T>&>(*_obj);
@@ -389,7 +423,7 @@ protected:
 		}
 	}
 
-	BasePtr(ptr_cluster_hub_base* other) : BasePtrFunctional<T>(other) {
+	BasePtr(ptr_cluster_hub_base* other, ptr_offset offset) : BasePtrFunctional<T>(other, offset) {
 		if(other->has_owner()) THROW_EXCEPTION("One pointer cluster can't have two or more owners!");
 		this->data->incr();
 	}
@@ -398,12 +432,13 @@ protected:
 		disconnect();
 	}
 
-	void move(ptr_cluster_hub_base* other) {
+	void move(ptr_cluster_hub_base* other, ptr_offset offset) {
 		if(this->data == other) return;
 		disconnect();
 		if(other) {
 			if(other->has_owner()) THROW_EXCEPTION("One pointer cluster can't have two or more owners!");
 			this->data = other;
+			this->offset = offset;
 			other->incr();
 			other->addFlag(ptr::flags::has_owner);
 		} else this->data = nullptr;

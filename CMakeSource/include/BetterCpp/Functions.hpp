@@ -28,9 +28,14 @@ template<typename From, typename To>
 struct object_converter<From, To, false> {
 	static RefPtr<To> convert(const RefPtr<From>& from) {
 		RefPtr<To> to;
-		const To* ptr = dynamic_cast<const To*>(from.cget());
-		if(ptr == nullptr) return to;
-		to.data = from.data->push((void*)ptr, false);
+		//const To* ptr = dynamic_cast<const To*>(from.cget());
+		//if(ptr == nullptr) return to;
+		to.data = from.data;//->push((void*)ptr, false);
+		if (to.offset.set_offset<From, To>(from.cget())) {
+			to.data->incr();
+		} else {
+			to.data = nullptr;
+		}
 		return to;
 	}
 };
