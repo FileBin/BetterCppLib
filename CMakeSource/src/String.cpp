@@ -11,6 +11,8 @@
 #include "fmt/xchar.h"
 #include "fmt/args.h"
 
+#include <codecvt>
+
 NSP_BETTERCPP_BEGIN
 
 String::~String() { delete data; }
@@ -29,17 +31,18 @@ const String& String::operator=(const_ref(String) other) {
 }
 
 String::String(const char_cptr str) {
-	#ifdef _MSC_VER
-	int size_needed = MultiByteToWideChar(CP_UTF8, 0, str, (int)strlen(str), NULL, 0);
+	//#ifdef _MSC_VER
+	/*int size_needed = MultiByteToWideChar(CP_UTF8, 0, str, (int)strlen(str), NULL, 0);
     data = (WCHAR*)malloc(size_needed);
     MultiByteToWideChar(CP_UTF8, 0, &str[0], (int)strlen(str), data, size_needed);
-	#else
+	data[size_needed - 1] = 0;*/
+	//#else
 	std::wstring_convert<std::codecvt_utf8<wchar_t>> utf8_conv;
 	auto ws = utf8_conv.from_bytes(str);
 	const wchar_t* src = ws.c_str();
 	data = new wchar_t[wcslen(src) + 1];
 	wcscpy(data, src);
-	#endif
+	//#endif
 }
 String::String(const wchar_cptr src) {
 	data = new wchar_t[wcslen(src) + 1];
@@ -47,18 +50,18 @@ String::String(const wchar_cptr src) {
 }
 
 String::String(const std::string str) {
-#ifdef _MSC_VER
-	const char* cstr = str.c_str();
+//#ifdef _MSC_VER
+	/*const char* cstr = str.c_str();
 	int size_needed = MultiByteToWideChar(CP_UTF8, 0, cstr, (int)strlen(cstr), NULL, 0);
 	data = (WCHAR*)malloc(size_needed);
-	MultiByteToWideChar(CP_UTF8, 0, &cstr[0], (int)strlen(cstr), data, size_needed);
-#else
+	MultiByteToWideChar(CP_UTF8, 0, &cstr[0], (int)strlen(cstr), data, size_needed);*/
+//#else
 	std::wstring_convert<std::codecvt_utf8<wchar_t>> utf8_conv;
 	auto ws = utf8_conv.from_bytes(str.c_str());
 	const wchar_t* src = ws.c_str();
 	data = new wchar_t[wcslen(src) + 1];
 	wcscpy(data, src);
-#endif
+//#endif
 }
 String::String(const std::wstring ws){
 	const wchar_t* src = ws.c_str();
@@ -96,16 +99,16 @@ String String::__fmt(std::wstring ws, std::vector<std::wstring> args) {
 String String::fromUtf8(const char_cptr c_str) { return c_str; }
 
 std::string String::toUtf8() const {
-	#ifdef _MSC_VER
-	wchar_t* wstr = data;
+	//#ifdef _MSC_VER
+	/*wchar_t* wstr = data;
 	int size_needed = WideCharToMultiByte(CP_UTF8, 0, wstr, (int)wcslen(wstr), NULL, 0, NULL, NULL);
     char* strTo = (char*)malloc(size_needed);
     WideCharToMultiByte(CP_UTF8, 0, wstr, (int)wcslen(wstr), strTo, size_needed, NULL, NULL);
-    return strTo;
-	#else
+    return strTo;*/
+	//#else
 	std::wstring_convert<std::codecvt_utf8<wchar_t>> utf8_conv;
 	return utf8_conv.to_bytes(data);
-	#endif
+	//#endif
 }
 const wchar_cptr String::toWide() const {
 	return data;

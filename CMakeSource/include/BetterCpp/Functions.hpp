@@ -67,7 +67,9 @@ struct object_instancer<T, true, Args...> {
 		T* obj = new T(args...);
 		auto ptr = static_cast<EnableThisRefPtr<T>*>(obj);
 		ptr->allocated = true;
-		return RefPtr<T>(obj);
+		RefPtr<T> ref(obj);
+		((ptr_cluster_hub_root*)ref.data)->base_ref = ptr;
+		return ref;
 	}
 };
 

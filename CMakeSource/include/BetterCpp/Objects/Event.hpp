@@ -22,7 +22,7 @@ protected:
 	void check(EventRegistration& reg);
 	virtual void unregister(uint id) = 0;
 public:
-	//virtual ~EventBase() {}
+	virtual ~EventBase() {}
 };
 
 struct EventRegistration : ICleanable {

@@ -14,6 +14,8 @@ NSP_BETTERCPP_BEGIN
 template<typename T>
 class EnableThisRefPtr;
 
+struct EnableThisRefPtrBase;
+
 template<typename T>
 class AutoPtr;
 
@@ -84,11 +86,13 @@ public:
 	ptr_cluster_hub_root* root();
 };
 
-//29 bytes for 64-bit
-//17 bytes for 32-bit
+//37 bytes for 64-bit
+//21 bytes for 32-bit
 struct ptr_cluster_hub_root : public ptr_cluster_hub_base {
 public:
 	void (*destoy_func)(void*);
+	//TODO move this in other struct
+	EnableThisRefPtrBase* base_ref = 0;
 
 	template<typename T>
 	ptr_cluster_hub_root(T* obj, bool is_owner);
@@ -128,10 +132,14 @@ protected:
 	friend class AutoPtr;
 
 	template<typename R>
+
 	friend class RefPtr;
 
 	template<typename Fr, typename To, bool is_base>
 	friend struct object_converter;
+
+	template<typename T, bool is_class, typename... Args>
+	friend struct object_instancer;
 	ptr_cluster_hub_base *data;
 
 	BasePtrFunctional(ptr_cluster_hub_base* data) : data(data) {}
