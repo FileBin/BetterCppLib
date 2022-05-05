@@ -41,10 +41,11 @@ namespace ptr {
 struct ptr_offset {
 private:
 	static constexpr ptr::offset_t unset = std::numeric_limits<ptr::offset_t>::lowest();
+	static constexpr ptr::offset_t unset_bit = 1 << (sizeof(ptr::offset_t)*8-2);
 	ptr::offset_t offset = 0;
 public:
 	ptr_offset(bool set = true) {
-		if (!set) offset = unset;
+		if (!set) offset = unset_bit;
 	}
 	template<typename From, typename To>
 	bool set_offset(From* ptr) {
@@ -54,7 +55,7 @@ public:
 			offset = ptr_with_offset - ptr_T;
 			return true;
 		} else {
-			offset = unset;
+			offset = unset_bit;
 			return false;
 		}
 	}
@@ -65,7 +66,7 @@ public:
 	}*/
 
 	void* get_with_offset(void* ptr) const {
-		if (offset == unset) return nullptr;
+		if (offset & unset_bit) return nullptr;
 		return (char*)ptr + offset;
 	}
 };
@@ -135,6 +136,7 @@ public:
 	//ptr_cluster_hub_root* root();
 };
 
+//TODO: merge this with base
 //37 bytes for 64-bit
 //21 bytes for 32-bit
 struct ptr_cluster_hub_root : public ptr_cluster_hub_base {
