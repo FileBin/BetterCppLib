@@ -77,12 +77,11 @@ public:
 	}
 
 	void invoke(args_t... args) {
-		const_ref(auto) coll = as<IEnumerableT<RefPtr<std_func_t>>>(handlers.getCollectionWithGaps());
+		const_ref(auto) coll = handlers.getCollectionWithGaps();
 
 		//auto en = coll.getEnumeratorT();
 		//while(en->next()) {
-		foreach(coll) {
-			auto& func = foreach_elem;//en->currentT();
+		for(auto& func : coll) {
 			if(func.isNull()) return;
 			(*func)(args...);
 		}

@@ -29,7 +29,7 @@ public:
 	template<typename R>
 	RefPtr(const RefPtr<R>& other) : BasePtr<T, false>(other.data, other.offset) {
 		static_assert(is_base<T, R>::value, "Can't convert R to T");
-		this->offset.set_offset<R, T>(other.cget());
+		this->offset.template set_offset<R, T>(other.cget());
 #ifdef _DEBUG
 		debugPtr = this->cget();
 #endif

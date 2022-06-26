@@ -6,3 +6,4 @@
  */
 
 #define USE_BETTERCPP_MACROS
+#define _DEBUG

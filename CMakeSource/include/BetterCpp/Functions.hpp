@@ -31,7 +31,7 @@ struct object_converter<From, To, false> {
 		//const To* ptr = dynamic_cast<const To*>(from.cget());
 		//if(ptr == nullptr) return to;
 		to.data = from.data;//->push((void*)ptr, false);
-		if (to.offset.set_offset<From, To>(from.cget())) {
+		if (to.offset.template set_offset<From, To>(from.cget())) {
 			to.data->incr();
 		} else {
 			to.data = nullptr;

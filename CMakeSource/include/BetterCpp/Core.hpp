@@ -20,6 +20,9 @@ typedef uint8_t byte;
 typedef uint32_t uint;
 typedef uint64_t ulong;
 
+template<typename T>
+using List = std::vector<T>;
+
 NSP_BETTERCPP_BEGIN
 
 better_class_proto(String);

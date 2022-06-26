@@ -41,11 +41,11 @@ namespace ptr {
 struct ptr_offset {
 private:
 	static constexpr ptr::offset_t unset = std::numeric_limits<ptr::offset_t>::lowest();
-	static constexpr ptr::offset_t unset_bit = 1 << (sizeof(ptr::offset_t)*8-2);
+	//static constexpr ptr::offset_t unset_bit = 1 << (sizeof(ptr::offset_t)*8-2);
 	ptr::offset_t offset = 0;
 public:
 	ptr_offset(bool set = true) {
-		if (!set) offset = unset_bit;
+		if (!set) offset = unset;
 	}
 	template<typename From, typename To>
 	bool set_offset(From* ptr) {
@@ -55,7 +55,7 @@ public:
 			offset = ptr_with_offset - ptr_T;
 			return true;
 		} else {
-			offset = unset_bit;
+			offset = unset;
 			return false;
 		}
 	}
@@ -66,7 +66,7 @@ public:
 	}*/
 
 	void* get_with_offset(void* ptr) const {
-		if (offset & unset_bit) return nullptr;
+		if (offset == unset) return nullptr;
 		return (char*)ptr + offset;
 	}
 };
@@ -189,7 +189,7 @@ protected:
 	template<typename Fr, typename To, bool is_base>
 	friend struct object_converter;
 
-	template<typename T, bool is_class, typename... Args>
+	template<typename R, bool is_class, typename... Args>
 	friend struct object_instancer;
 
 

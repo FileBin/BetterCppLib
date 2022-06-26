@@ -9,7 +9,8 @@
 
 #include "../Interfaces/Interfaces.hpp"
 #include "Pointers.hpp"
-#include "List.hpp"
+
+#include "../Core.hpp"
 
 NSP_BETTERCPP_BEGIN
 
@@ -26,7 +27,7 @@ public:
 		emptyPositions.reserve(0xfff);
 	}
 
-	const_ref(ICollectionT<ptr_t>) getCollection() const {
+	const_ref(List<ptr_t>) getCollection() const {
 		List<ptr_t> list{};
 		auto n = collection.size();
 		list.reserve(n);
@@ -39,7 +40,7 @@ public:
 	}
 
 
-	const_ref(ICollectionT<ptr_t>) getCollectionWithGaps() const {
+	const_ref(List<ptr_t>) getCollectionWithGaps() const {
 		return collection;
 	}
 
@@ -49,12 +50,12 @@ public:
 
 	Id_t registerPtr(ptr_t pObject) {
 		if (emptyPositions.empty()) {
-			collection.push(pObject);
-			return collection.length() - 1;
+			collection.push_back(pObject);
+			return collection.size() - 1;
 		} else {
-			auto idx = emptyPositions.last();
+			uint idx = emptyPositions.size() - 1;
 			collection[idx] = pObject;
-			emptyPositions.pop();
+			emptyPositions.pop_back();
 			return idx;
 		}
 	}
@@ -65,7 +66,7 @@ public:
 
 	void unregister(Id_t index) {
 		collection[index] = nullptr;
-		emptyPositions.push(index);
+		emptyPositions.push_back(index);
 	}
 
 	void cleanup() {
